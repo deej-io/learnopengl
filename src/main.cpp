@@ -34,15 +34,19 @@ void main() {
 }
 )";
 
-static const char *fragment_shader_source = R"(
+static std::string fragment_shader_source(std::string_view color) {
+    const char *format = R"(
 #version 330 core
 
 out vec4 FragColor;
 
-void main() {
-    FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);
-}
+void main() {{
+    FragColor = vec4({0}, 1.0f);
+}}
 )";
+
+    return fmt::format(format, color);
+}
 
 int main() {
 
@@ -89,34 +93,66 @@ int main() {
         return -1;
     }
 
-    auto fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragment_shader, 1, &fragment_shader_source, nullptr);
-    glCompileShader(fragment_shader);
+    const auto fragment_shader_source_1 = fragment_shader_source("0.7f, 0.2f, 0.1f");
+    const auto fragment_shader_source_2 = fragment_shader_source("0.1f, 0.2f, 0.7f");
+    const auto fragment_shader_source_1_cstr = fragment_shader_source_1.c_str();
+    const auto fragment_shader_source_2_cstr = fragment_shader_source_2.c_str();
 
-    glGetShaderiv(fragment_shader, GL_COMPILE_STATUS, &success);
+    auto fragment_shader_1 = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragment_shader_1, 1, &fragment_shader_source_1_cstr, nullptr);
+    glCompileShader(fragment_shader_1);
+
+    glGetShaderiv(fragment_shader_1, GL_COMPILE_STATUS, &success);
 
     if (!success) {
         std::array<char, 512> info;
-        glGetShaderInfoLog(fragment_shader, info.size(), nullptr, info.data());
+        glGetShaderInfoLog(fragment_shader_1, info.size(), nullptr, info.data());
         fmt::print(stderr, fmt::fg(fmt::color::red), FMT_STRING("ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n{}"), info.data());
         return -1;
     }
 
-    auto shader_program = glCreateProgram();
-    glAttachShader(shader_program, vertex_shader);
-    glAttachShader(shader_program, fragment_shader);
-    glLinkProgram(shader_program);
+    auto fragment_shader_2 = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragment_shader_2, 1, &fragment_shader_source_2_cstr, nullptr);
+    glCompileShader(fragment_shader_2);
 
-    glGetProgramiv(shader_program, GL_LINK_STATUS, &success);
+    glGetShaderiv(fragment_shader_1, GL_COMPILE_STATUS, &success);
+
+    if (!success) {
+        std::array<char, 512> info;
+        glGetShaderInfoLog(fragment_shader_2, info.size(), nullptr, info.data());
+        fmt::print(stderr, fmt::fg(fmt::color::red), FMT_STRING("ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n{}"), info.data());
+        return -1;
+    }
+
+    auto shader_program_1 = glCreateProgram();
+    glAttachShader(shader_program_1, vertex_shader);
+    glAttachShader(shader_program_1, fragment_shader_1);
+    glLinkProgram(shader_program_1);
+
+    glGetProgramiv(shader_program_1, GL_LINK_STATUS, &success);
     if(!success) {
         std::array<char, 512> info;
-        glGetProgramInfoLog(shader_program, info.size(), nullptr, info.data());
+        glGetProgramInfoLog(shader_program_1, info.size(), nullptr, info.data());
+        fmt::print(stderr, fmt::fg(fmt::color::red), FMT_STRING("ERROR::SHADER::PROGRAM::LINKING_FAILED\n{}"), info.data());
+        return -1;
+    }
+
+    auto shader_program_2 = glCreateProgram();
+    glAttachShader(shader_program_2, vertex_shader);
+    glAttachShader(shader_program_2, fragment_shader_2);
+    glLinkProgram(shader_program_2);
+
+    glGetProgramiv(shader_program_2, GL_LINK_STATUS, &success);
+    if(!success) {
+        std::array<char, 512> info;
+        glGetProgramInfoLog(shader_program_2, info.size(), nullptr, info.data());
         fmt::print(stderr, fmt::fg(fmt::color::red), FMT_STRING("ERROR::SHADER::PROGRAM::LINKING_FAILED\n{}"), info.data());
         return -1;
     }
 
     glDeleteShader(vertex_shader);
-    glDeleteShader(fragment_shader);
+    glDeleteShader(fragment_shader_1);
+    glDeleteShader(fragment_shader_2);
 
     auto vertices_1 = std::array<float, 18> {
         -0.9f, -0.9f, 0.0f,
@@ -153,12 +189,14 @@ int main() {
             glfwSetWindowShouldClose(window.get(), true);
         }
 
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClearColor(0.4f, 0.4f, 0.4f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glUseProgram(shader_program);
+        glUseProgram(shader_program_1);
         glBindVertexArray(VAOs[0]);
         glDrawArrays(GL_TRIANGLES, 0, 3);
+
+        glUseProgram(shader_program_2);
         glBindVertexArray(VAOs[1]);
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
