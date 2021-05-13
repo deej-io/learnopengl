@@ -1,0 +1,3 @@
+%compile_commands.json
+-Weverything
+-Wno-c++98-compat

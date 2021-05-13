@@ -1,0 +1,9 @@
+{
+    "name": "learnopengl",
+    "version-string": "0.1",
+    "dependencies": [
+        "glfw3",
+        "glad",
+        "fmt"
+    ]
+}
