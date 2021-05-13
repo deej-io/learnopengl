@@ -121,17 +121,19 @@ int main() {
     glDeleteShader(vertex_shader);
     glDeleteShader(fragment_shader);
 
-    auto vertices = std::array {
-         0.5f,  0.5f, 0.0f,  // top right
-         0.5f, -0.5f, 0.0f,  // bottom right
-        -0.5f, -0.5f, 0.0f,  // bottom left
-        -0.5f,  0.5f, 0.0f   // top left
+    auto vertices = std::array<float, 18> {
+        -0.9f, -0.9f, 0.0f,
+        -0.1f, -0.9f, 0.0f,
+        -0.5 ,  0.9f, 0.0f,
+         0.1f, -0.9f, 0.0f,
+         0.9f, -0.9f, 0.0f,
+         0.5 ,  0.9f, 0.0f
     };
 
     auto indices = std::array {
-        0, 1, 3,   // first triangle
-        1, 2, 3    // second triangle
-    };  
+        0, 1, 2,
+        3, 4, 5
+    };
 
     unsigned int VAO, VBO, EBO;
 
@@ -149,7 +151,6 @@ int main() {
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
     glEnableVertexAttribArray(0);
-
 
     while(!glfwWindowShouldClose(window.get()))
     {
