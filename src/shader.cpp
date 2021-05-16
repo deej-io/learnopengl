@@ -28,7 +28,7 @@ static auto load_shader(GLenum shader_type, fs::path filename) {
     if (!success) {
         std::array<char, 512> info{};
         glGetShaderInfoLog(shader, info.size(), nullptr, info.data());
-        fmt::print(stderr, fmt::fg(fmt::color::red), FMT_STRING("ERROR::SHADER::COMPILATION_FAILED\n{}"), info.data());
+        fmt::print(stderr, fmt::fg(fmt::color::red), FMT_STRING("ERROR::SHADER::COMPILATION_FAILED: {}\n{}"), filename.c_str(), info.data());
         throw std::runtime_error{ "shader compile error" };
     }
 
@@ -57,8 +57,16 @@ shader::shader(fs::path vertex_shader_path, fs::path fragment_shader_path) {
     glDeleteShader(fragment_shader);
 }
 
-void shader::uniform(const std::string &name, float value) const noexcept {
+void shader::uniform(const std::string& name, float value) const noexcept {
     glUniform1f(glGetUniformLocation(id, name.c_str()), value);
+}
+
+void shader::uniform(const std::string& name, int value) const noexcept {
+    glUniform1i(glGetUniformLocation(id, name.c_str()), value);
+}
+
+void shader::uniform(const std::string& name, unsigned int value) const noexcept {
+    glUniform1ui(glGetUniformLocation(id, name.c_str()), value);
 }
 
 void shader::use() const noexcept {
