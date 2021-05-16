@@ -57,6 +57,10 @@ shader::shader(fs::path vertex_shader_path, fs::path fragment_shader_path) {
     glDeleteShader(fragment_shader);
 }
 
+void shader::uniform(const std::string &name, float value) const noexcept {
+    glUniform1f(glGetUniformLocation(id, name.c_str()), value);
+}
+
 void shader::use() const noexcept {
     glUseProgram(id);
 }

@@ -5,6 +5,7 @@
 
 #include <experimental/memory>
 #include <filesystem>
+#include <string>
 
 #include "shader.hpp"
 
@@ -104,6 +105,9 @@ int main(int, const char** argv) {
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, reinterpret_cast<void*>(9 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
+    shader.use();
+    shader.uniform("x_offset", 0.25f);
+
     while (!glfwWindowShouldClose(window.get())) {
         if (glfwGetKey(window.get(), GLFW_KEY_ESCAPE) == GLFW_PRESS) {
             glfwSetWindowShouldClose(window.get(), true);
@@ -112,7 +116,6 @@ int main(int, const char** argv) {
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        shader.use();
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, nullptr);
 
