@@ -106,7 +106,6 @@ int main(int, const char** argv) {
     glEnableVertexAttribArray(1);
 
     shader.use();
-    shader.uniform("x_offset", 0.25f);
 
     while (!glfwWindowShouldClose(window.get())) {
         if (glfwGetKey(window.get(), GLFW_KEY_ESCAPE) == GLFW_PRESS) {
