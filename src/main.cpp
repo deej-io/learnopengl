@@ -98,10 +98,10 @@ int main(int, const char** argv) {
         1.0f, 1.0f, 0.0f,
 
         // texture coords
-        1.0f, 1.0f,
-        1.0f, 0.0f,
+        2.0f, 2.0f,
+        2.0f, 0.0f,
         0.0f, 0.0f,
-        0.0f, 1.0f
+        0.0f, 2.0f
     };
 
     auto indices = std::array{
@@ -137,6 +137,10 @@ int main(int, const char** argv) {
 
     auto textures_dir = exec_dir / "../textures";
     texture wood_panel_texture{ textures_dir / "container.jpg" };
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
     texture face_texture{ textures_dir / "awesomeface.png" };
 
     shader.uniform("wood_texture", texture_unit_index(GL_TEXTURE0));
