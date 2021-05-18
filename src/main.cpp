@@ -98,10 +98,10 @@ int main(int, const char** argv) {
         1.0f, 1.0f, 0.0f,
 
         // texture coords
-        2.0f, 2.0f,
-        2.0f, 0.0f,
-        0.0f, 0.0f,
-        0.0f, 2.0f
+        0.55f, 0.55f,
+        0.55f, 0.45f,
+        0.45f, 0.45f,
+        0.45f, 0.55f
     };
 
     auto indices = std::array{
@@ -140,6 +140,8 @@ int main(int, const char** argv) {
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     texture face_texture{ textures_dir / "awesomeface.png" };
 
