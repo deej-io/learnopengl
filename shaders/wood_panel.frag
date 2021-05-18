@@ -8,9 +8,10 @@ uniform sampler2D wood_texture;
 uniform sampler2D face_texture;
 
 void main() {
+  vec2 x_flipped_tex_coords = vec2(-vertex_tex_coords.x, vertex_tex_coords.y);
   fragment_color = mix(
       texture(wood_texture, vertex_tex_coords),
-      texture(face_texture, vertex_tex_coords),
+      texture(face_texture, x_flipped_tex_coords),
       0.2
   );
 };
