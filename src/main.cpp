@@ -6,10 +6,12 @@
 
 #include <experimental/memory>
 #include <filesystem>
+#include <sstream>
 #include <string>
 
 #include "shader.hpp"
 #include "texture.hpp"
+#include "gl_debug.hpp"
 
 using std::experimental::make_observer;
 using std::experimental::observer_ptr;
@@ -54,8 +56,9 @@ int main(int, const char** argv) {
 
     glfwSetErrorCallback(&error_handler);
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, false); // This makes it float in i3
 
@@ -67,6 +70,8 @@ int main(int, const char** argv) {
         fmt::print(stderr, fmt::fg(fmt::color::red), "Failed to initialize GLAD\n");
         return -1;
     }
+
+    maybe_setup_opengl_logging();
 
     glViewport(0, 0, 800, 600);
     glfwSetFramebufferSizeCallback(window.get(), [](GLFWwindow*, int width, int height) {
