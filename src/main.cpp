@@ -9,9 +9,9 @@
 #include <sstream>
 #include <string>
 
+#include "gl_debug.hpp"
 #include "shader.hpp"
 #include "texture.hpp"
-#include "gl_debug.hpp"
 
 using std::experimental::make_observer;
 using std::experimental::observer_ptr;
@@ -41,6 +41,25 @@ scope_exit(Func&&) -> scope_exit<Func>;
 
 [[nodiscard]] static int texture_unit_index(GLenum texture_unit) {
     return static_cast<int>(texture_unit - GL_TEXTURE0);
+}
+
+static void key_callback(GLFWwindow* window, int key, int, int action, int) {
+    if (action != GLFW_PRESS)
+        return;
+
+    float* blend_value = static_cast<float*>(glfwGetWindowUserPointer(window));
+
+    switch (key) {
+    case GLFW_KEY_ESCAPE:
+        glfwSetWindowShouldClose(window, true);
+        break;
+    case GLFW_KEY_UP:
+        *blend_value = std::clamp(*blend_value + 0.1f, 0.0f, 1.0f);
+        break;
+    case GLFW_KEY_DOWN:
+        *blend_value = std::clamp(*blend_value - 0.1f, 0.0f, 1.0f);
+        break;
+    }
 }
 
 int main(int, const char** argv) {
@@ -98,10 +117,10 @@ int main(int, const char** argv) {
         1.0f, 1.0f, 0.0f,
 
         // texture coords
-        0.55f, 0.55f,
-        0.55f, 0.45f,
-        0.45f, 0.45f,
-        0.45f, 0.55f
+        1.0f, 1.0f,
+        1.0f, 0.0f,
+        0.0f, 0.0f,
+        0.0f, 1.0f
     };
 
     auto indices = std::array{
@@ -137,27 +156,22 @@ int main(int, const char** argv) {
 
     auto textures_dir = exec_dir / "../textures";
     texture wood_panel_texture{ textures_dir / "container.jpg" };
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
     texture face_texture{ textures_dir / "awesomeface.png" };
 
     shader.uniform("wood_texture", texture_unit_index(GL_TEXTURE0));
     shader.uniform("face_texture", texture_unit_index(GL_TEXTURE1));
 
-    while (!glfwWindowShouldClose(window.get())) {
-        if (glfwGetKey(window.get(), GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-            glfwSetWindowShouldClose(window.get(), true);
-        }
+    float blend_value = 0.2f;
+    glfwSetWindowUserPointer(window.get(), &blend_value);
+    glfwSetKeyCallback(window.get(), key_callback);
 
+    while (!glfwWindowShouldClose(window.get())) {
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         wood_panel_texture.bind(GL_TEXTURE0);
         face_texture.bind(GL_TEXTURE1);
+        shader.uniform("blend_value", blend_value);
 
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
