@@ -5,11 +5,11 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <stdio.h>
-#include <stdlib.h>
 
 #include <algorithm>
 #include <array>
+#include <cstdio>
+#include <cstdlib>
 #include <experimental/memory>
 #include <filesystem>
 #include <string>
@@ -20,14 +20,17 @@
 #include "texture.hpp"
 
 using std::experimental::make_observer;
-using std::experimental::observer_ptr;
 
 namespace fs = std::filesystem;
 
 template<typename Func>
 struct [[nodiscard]] scope_exit {
-    scope_exit(Func&& func)
+    explicit scope_exit(Func&& func)
     : func_(std::forward<Func>(func)) {}
+    scope_exit(const scope_exit&) = delete;
+    scope_exit(scope_exit&&) = delete;
+    scope_exit& operator=(const scope_exit&) = delete;
+    scope_exit& operator=(scope_exit&&) = delete;
     ~scope_exit() {
         func_();
     }
@@ -75,21 +78,27 @@ static auto rotate(A angle, glm::vec<3, T, Q> const& axis) {
     };
 }
 
+struct window_data {
+    float width;
+    float height;
+    float blend_value;
+};
+
 static void key_callback(GLFWwindow* window, int key, int, int action, int) {
     if (action != GLFW_PRESS)
         return;
 
-    float* blend_value = static_cast<float*>(glfwGetWindowUserPointer(window));
+    auto* data = static_cast<window_data*>(glfwGetWindowUserPointer(window));
 
     switch (key) {
     case GLFW_KEY_ESCAPE:
         glfwSetWindowShouldClose(window, true);
         break;
     case GLFW_KEY_UP:
-        *blend_value = std::clamp(*blend_value + 0.1f, 0.0f, 1.0f);
+        data->blend_value = std::clamp(data->blend_value + 0.1f, 0.0f, 1.0f);
         break;
     case GLFW_KEY_DOWN:
-        *blend_value = std::clamp(*blend_value - 0.1f, 0.0f, 1.0f);
+        data->blend_value = std::clamp(data->blend_value - 0.1f, 0.0f, 1.0f);
         break;
     }
 }
@@ -124,7 +133,13 @@ int main(int, const char** argv) {
 
     maybe_setup_opengl_logging();
 
-    glViewport(0, 0, 800, 600);
+    glEnable(GL_DEPTH_TEST);
+
+    window_data window_data{ 800, 600, 0.2f };
+
+    glfwSetWindowUserPointer(window.get(), &window_data);
+    glfwSetKeyCallback(window.get(), key_callback);
+
     glfwSetFramebufferSizeCallback(window.get(), [](GLFWwindow*, int width, int height) {
         glViewport(0, 0, width, height);
     });
@@ -136,53 +151,78 @@ int main(int, const char** argv) {
 
     // clang-format off
     auto vertices = std::array{
-        // positions
-         0.5f,  0.5f, 0.0f, // top right
-         0.5f, -0.5f, 0.0f, // bottom right
-        -0.5f, -0.5f, 0.0f, // bottom left
-        -0.5f,  0.5f, 0.0f, // top left P
+        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+         0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
 
-        // colors
-        1.0f, 0.0f, 0.0f,
-        0.0f, 1.0f, 0.0f,
-        0.0f, 0.0f, 1.0f,
-        1.0f, 1.0f, 0.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
 
-        // texture coords
-        1.0f, 1.0f,
-        1.0f, 0.0f,
-        0.0f, 0.0f,
-        0.0f, 1.0f
-    };
+        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
 
-    auto indices = std::array{
-        0, 1, 3, // first triangle
-        1, 2, 3  // second triangle
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
     };
     // clang-format on
 
-    unsigned int VAO, VBO, EBO;
+    auto cube_positions = std::array{
+        glm::vec3(0.0f, 0.0f, 0.0f),
+        glm::vec3(2.0f, 5.0f, -15.0f),
+        glm::vec3(-1.5f, -2.2f, -2.5f),
+        glm::vec3(-3.8f, -2.0f, -12.3f),
+        glm::vec3(2.4f, -0.4f, -3.5f),
+        glm::vec3(-1.7f, 3.0f, -7.5f),
+        glm::vec3(1.3f, -2.0f, -2.5f),
+        glm::vec3(1.5f, 2.0f, -2.5f),
+        glm::vec3(1.5f, 0.2f, -1.5f),
+        glm::vec3(-1.3f, 1.0f, -1.5f)
+    };
+
+    unsigned int VAO = 0, VBO = 0;
 
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
 
     glBindVertexArray(VAO);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices.data(), GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices.data(), GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+    //
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), nullptr);
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, reinterpret_cast<void*>(12 * sizeof(float)));
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), reinterpret_cast<void*>(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
-
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, reinterpret_cast<void*>(24 * sizeof(float)));
-    glEnableVertexAttribArray(2);
 
     shader.use();
 
@@ -193,37 +233,34 @@ int main(int, const char** argv) {
     shader.uniform("wood_texture", texture_unit_index(GL_TEXTURE0));
     shader.uniform("face_texture", texture_unit_index(GL_TEXTURE1));
 
-    float blend_value = 0.2f;
-    glfwSetWindowUserPointer(window.get(), &blend_value);
-    glfwSetKeyCallback(window.get(), key_callback);
-
     while (!glfwWindowShouldClose(window.get())) {
+        const auto angle = static_cast<float>(glfwGetTime());
+
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glBindVertexArray(VAO);
 
         wood_panel_texture.bind(GL_TEXTURE0);
         face_texture.bind(GL_TEXTURE1);
-        shader.uniform("blend_value", blend_value);
 
-        shader.uniform(
-            "transform",
-            glm::identity<glm::mat4>()
-                | translate(glm::vec3(0.5f, 0.0f, 0.0f))
-                | scale(glm::vec3(0.5f, 0.5f, 0.0f))
-                | rotate(static_cast<float>(glfwGetTime()), glm::vec3(0.0f, 0.0f, 1.0f)));
+        shader.uniform("blend_value", window_data.blend_value);
 
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+        glm::mat4 view = glm::identity<glm::mat4>() | translate(glm::vec3(0.0f, 0.0f, -3.0f));
+        shader.uniform("view", view);
 
-        shader.uniform(
-            "transform",
-            glm::identity<glm::mat4>()
-                | translate(glm::vec3(-0.5f, 0.0f, 0.0f))
-                | scale(glm::vec3(0.5f, 0.5f, 0.0f))
-                | rotate(-static_cast<float>(glfwGetTime()), glm::vec3(0.0f, 0.0f, 1.0f)));
+        glm::mat4 projection = glm::perspective(glm::radians(45.0f), window_data.width / window_data.height, 0.1f, 100.0f);
+        shader.uniform("projection", projection);
 
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+        for (std::size_t i = 0; i < cube_positions.size(); ++i) {
+            const auto model =
+                glm::identity<glm::mat4>()
+                | translate(cube_positions[i])
+                | rotate(glm::radians(20.f * (static_cast<float>(i) + angle)), glm::vec3(1.0f, 0.3f, 0.5f));
+
+            shader.uniform("model", model);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
 
         glfwSwapBuffers(window.get());
         glfwPollEvents();

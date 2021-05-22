@@ -26,3 +26,18 @@ add_executable(glm glm/main.cpp)
 target_compile_features(glm PRIVATE cxx_std_20)
 target_compile_options(glm PRIVATE $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>>:-Wextra -Wall>)
 target_link_libraries(glm PRIVATE glm::glm fmt::fmt)
+
+option(ENABLE_INCLUDE_WHAT_YOU_USE "Enable static analysis with include-what-you-use" OFF)
+option(ENABLE_CLANG_TIDY "Enable static analysis with clang-tidy" OFF)
+
+if(ENABLE_INCLUDE_WHAT_YOU_USE)
+	find_program(INCLUDE_WHAT_YOU_USE include-what-you-use REQUIRED)
+	set_property(TARGET learnopengl PROPERTY CXX_INCLUDE_WHAT_YOU_USE ${INCLUDE_WHAT_YOU_USE})
+endif()
+
+if(ENABLE_CLANG_TIDY)
+	find_program(CLANG_TIDY clang-tidy REQUIRED)
+	set_property(TARGET learnopengl PROPERTY CXX_CLANG_TIDY ${CLANG_TIDY})
+endif()
+
+

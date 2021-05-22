@@ -1,6 +1,5 @@
-Checks:          'cppcoreguidelines-*,bugprone-*,performance-*,modernize-*,readability-*,-readability-uppercase-literal-suffix,-modernize-use-trailing-return-type'
-WarningsAsErrors: ''
-HeaderFilterRegex: '' # don't show errors from headers
-AnalyzeTemporaryDtors: false
-FormatStyle:     file
-CheckOptions:
+---
+Checks:          '*,-fuchsia-*,-google-*,-zircon-*,-abseil-*,-modernize-use-trailing-return-type,-llvm*,-readability-uppercase-literal-suffix,-hicpp-uppercase-literal-suffix,-cppcoreguidelines-avoid-magic-numbers,-readability-magic-numbers'
+WarningsAsErrors: '*'
+HeaderFilterRegex: ''
+FormatStyle:     none

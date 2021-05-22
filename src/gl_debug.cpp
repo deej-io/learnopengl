@@ -1,7 +1,7 @@
-#include <glad/glad.h>
-#include <fmt/format.h>
-
 #include "gl_debug.hpp"
+
+#include <fmt/format.h>
+#include <glad/glad.h>
 
 static const char* gl_debug_severity_to_string(GLenum severity) {
     // clang-format off
@@ -75,5 +75,4 @@ void maybe_setup_opengl_logging() {
         glDebugMessageCallback(gl_debug_handler, nullptr);
         glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
     }
-
 }

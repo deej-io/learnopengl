@@ -1,7 +1,6 @@
 #version 330 core
 
 out vec4 fragment_color;
-in vec3 vertex_color;
 in vec2 vertex_tex_coords;
 
 uniform sampler2D wood_texture;
