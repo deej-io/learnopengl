@@ -3,6 +3,8 @@
 #include <fmt/color.h>
 #include <fmt/format.h>
 #include <glad/glad.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <filesystem>
 #include <fstream>
@@ -67,6 +69,10 @@ void shader::uniform(const std::string& name, int value) const noexcept {
 
 void shader::uniform(const std::string& name, unsigned int value) const noexcept {
     glUniform1ui(glGetUniformLocation(id, name.c_str()), value);
+}
+
+void shader::uniform(const std::string& name, const glm::mat4 &matrix) const noexcept {
+    glUniformMatrix4fv(glGetUniformLocation(id, name.c_str()), 1, GL_FALSE, glm::value_ptr(matrix));
 }
 
 void shader::use() const noexcept {

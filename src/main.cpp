@@ -2,12 +2,18 @@
 #include <fmt/color.h>
 #include <fmt/format.h>
 #include <glad/glad.h>
-#include <stb_image.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <stdio.h>
+#include <stdlib.h>
 
+#include <algorithm>
+#include <array>
 #include <experimental/memory>
 #include <filesystem>
-#include <sstream>
 #include <string>
+#include <utility>
 
 #include "gl_debug.hpp"
 #include "shader.hpp"
@@ -41,6 +47,32 @@ scope_exit(Func&&) -> scope_exit<Func>;
 
 [[nodiscard]] static int texture_unit_index(GLenum texture_unit) {
     return static_cast<int>(texture_unit - GL_TEXTURE0);
+}
+
+template<typename T, glm::qualifier Q, typename F>
+auto operator|(const glm::mat<4, 4, T, Q>& m, F&& f) {
+    return std::forward<F>(f)(m);
+}
+
+template<typename T, glm::qualifier Q = glm::qualifier::defaultp>
+static auto scale(glm::vec<3, T, Q> const& scale) {
+    return [&scale](glm::mat<4, 4, T, Q> const& mat) {
+        return glm::scale(mat, scale);
+    };
+}
+
+template<typename T, glm::qualifier Q>
+static auto translate(glm::vec<3, T, Q> const& direction) {
+    return [&direction](glm::mat<4, 4, T, Q> const& mat) {
+        return glm::translate(mat, direction);
+    };
+}
+
+template<typename A, typename T, glm::qualifier Q>
+static auto rotate(A angle, glm::vec<3, T, Q> const& axis) {
+    return [angle, &axis](glm::mat<4, 4, T, Q> const& mat) {
+        return glm::rotate(mat, angle, axis);
+    };
 }
 
 static void key_callback(GLFWwindow* window, int key, int, int action, int) {
@@ -169,11 +201,28 @@ int main(int, const char** argv) {
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
+        glBindVertexArray(VAO);
+
         wood_panel_texture.bind(GL_TEXTURE0);
         face_texture.bind(GL_TEXTURE1);
         shader.uniform("blend_value", blend_value);
 
-        glBindVertexArray(VAO);
+        shader.uniform(
+            "transform",
+            glm::identity<glm::mat4>()
+                | translate(glm::vec3(0.5f, 0.0f, 0.0f))
+                | scale(glm::vec3(0.5f, 0.5f, 0.0f))
+                | rotate(static_cast<float>(glfwGetTime()), glm::vec3(0.0f, 0.0f, 1.0f)));
+
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+
+        shader.uniform(
+            "transform",
+            glm::identity<glm::mat4>()
+                | translate(glm::vec3(-0.5f, 0.0f, 0.0f))
+                | scale(glm::vec3(0.5f, 0.5f, 0.0f))
+                | rotate(-static_cast<float>(glfwGetTime()), glm::vec3(0.0f, 0.0f, 1.0f)));
+
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
         glfwSwapBuffers(window.get());

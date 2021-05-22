@@ -1,6 +1,8 @@
 #ifndef LOGL_SHADER_HPP
 #define LOGL_SHADER_HPP
 
+#include <glm/glm.hpp>
+
 #include <filesystem>
 
 namespace fs = std::filesystem;
@@ -12,6 +14,7 @@ public:
     void uniform(const std::string& name, float value) const noexcept;
     void uniform(const std::string& name, int value) const noexcept;
     void uniform(const std::string& name, unsigned int value) const noexcept;
+    void uniform(const std::string& name, const glm::mat4& matrix) const noexcept;
 
 private:
     unsigned int id;

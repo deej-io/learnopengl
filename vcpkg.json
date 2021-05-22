@@ -5,6 +5,7 @@
         "glfw3",
         "glad",
         "fmt",
-        "stb"
+        "stb",
+        "glm"
     ]
 }
