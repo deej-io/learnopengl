@@ -22,11 +22,6 @@ target_compile_definitions(learnopengl PRIVATE GLFW_INCLUDE_NONE)
 
 target_link_libraries(learnopengl PUBLIC fmt::fmt glad::glad glfw)
 
-add_executable(glm glm/main.cpp)
-target_compile_features(glm PRIVATE cxx_std_20)
-target_compile_options(glm PRIVATE $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>>:-Wextra -Wall>)
-target_link_libraries(glm PRIVATE glm::glm fmt::fmt)
-
 option(ENABLE_INCLUDE_WHAT_YOU_USE "Enable static analysis with include-what-you-use" OFF)
 option(ENABLE_CLANG_TIDY "Enable static analysis with clang-tidy" OFF)
 
