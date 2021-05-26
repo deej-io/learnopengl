@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.9)
-set(GLAD_PROFILE "core")
 
 project(learnopengl VERSION 0.1.0)
 
