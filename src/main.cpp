@@ -18,6 +18,7 @@
 #include "gl_debug.hpp"
 #include "shader.hpp"
 #include "texture.hpp"
+#include "camera.hpp"
 
 using std::experimental::make_observer;
 
@@ -57,12 +58,12 @@ auto operator|(const glm::mat<4, 4, T, Q>& m, F&& f) {
     return std::forward<F>(f)(m);
 }
 
-template<typename T, glm::qualifier Q = glm::qualifier::defaultp>
-static auto scale(glm::vec<3, T, Q> const& scale) {
-    return [&scale](glm::mat<4, 4, T, Q> const& mat) {
-        return glm::scale(mat, scale);
-    };
-}
+//template<typename T, glm::qualifier Q = glm::qualifier::defaultp>
+//static auto scale(glm::vec<3, T, Q> const& scale) {
+//    return [&scale](glm::mat<4, 4, T, Q> const& mat) {
+//        return glm::scale(mat, scale);
+//    };
+//}
 
 template<typename T, glm::qualifier Q>
 static auto translate(glm::vec<3, T, Q> const& direction) {
@@ -82,25 +83,53 @@ struct window_data {
     float width;
     float height;
     float blend_value;
+    struct {
+        float x;
+        float y;
+    } mouse;
+    Camera camera;
 };
 
 static void key_callback(GLFWwindow* window, int key, int, int action, int) {
     if (action != GLFW_PRESS)
         return;
 
-    auto* data = static_cast<window_data*>(glfwGetWindowUserPointer(window));
+    auto data = static_cast<window_data*>(glfwGetWindowUserPointer(window));
+    auto &blend_value = data->blend_value;
 
     switch (key) {
     case GLFW_KEY_ESCAPE:
         glfwSetWindowShouldClose(window, true);
         break;
     case GLFW_KEY_UP:
-        data->blend_value = std::clamp(data->blend_value + 0.1f, 0.0f, 1.0f);
+        blend_value = std::clamp(blend_value + 0.1f, 0.0f, 1.0f);
         break;
     case GLFW_KEY_DOWN:
-        data->blend_value = std::clamp(data->blend_value - 0.1f, 0.0f, 1.0f);
+        blend_value = std::clamp(blend_value - 0.1f, 0.0f, 1.0f);
         break;
     }
+}
+
+static void mouse_callback(GLFWwindow* window, double x, double y) {
+    auto data = static_cast<window_data*>(glfwGetWindowUserPointer(window));
+    auto &mouse = data->mouse;
+    auto &camera = data->camera;
+
+    const auto xpos = static_cast<float>(x);
+    const auto ypos = static_cast<float>(y);
+
+    const auto xoffset = (xpos - mouse.x);
+    const auto yoffset = (ypos - mouse.y);
+    mouse.x = xpos;
+    mouse.y = ypos;
+
+    camera.handle_mouse(xoffset, yoffset);
+}
+
+static void scroll_callback(GLFWwindow* window, [[maybe_unused]] double xoffset, double yoffset) {
+    auto data = static_cast<window_data*>(glfwGetWindowUserPointer(window));
+
+    data->camera.handle_scroll(static_cast<float>(yoffset));
 }
 
 int main(int, const char** argv) {
@@ -122,9 +151,9 @@ int main(int, const char** argv) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, false); // This makes it float in i3
 
-    auto window = make_observer(glfwCreateWindow(800, 600, "LearnOpenGL", nullptr, nullptr));
+    auto window = glfwCreateWindow(800, 600, "LearnOpenGL", nullptr, nullptr);
 
-    glfwMakeContextCurrent(window.get());
+    glfwMakeContextCurrent(window);
 
     if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress))) {
         fmt::print(stderr, fmt::fg(fmt::color::red), "Failed to initialize GLAD\n");
@@ -135,12 +164,26 @@ int main(int, const char** argv) {
 
     glEnable(GL_DEPTH_TEST);
 
-    window_data window_data{ 800, 600, 0.2f };
+    window_data window_data{
+        .width = 800,
+        .height = 600,
+        .blend_value = 0.2f,
+        .mouse = {
+            .x = 400.0,
+            .y = 300.0,
+        },
+        .camera = Camera{
+            { 0.0f, 0.0f, 3.0f }
+        }
+    };
 
-    glfwSetWindowUserPointer(window.get(), &window_data);
-    glfwSetKeyCallback(window.get(), key_callback);
+    glfwSetWindowUserPointer(window, &window_data);
+    glfwSetKeyCallback(window, key_callback);
+    glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetScrollCallback(window, scroll_callback);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-    glfwSetFramebufferSizeCallback(window.get(), [](GLFWwindow*, int width, int height) {
+    glfwSetFramebufferSizeCallback(window, [](GLFWwindow*, int width, int height) {
         glViewport(0, 0, width, height);
     });
 
@@ -233,7 +276,24 @@ int main(int, const char** argv) {
     shader.uniform("wood_texture", texture_unit_index(GL_TEXTURE0));
     shader.uniform("face_texture", texture_unit_index(GL_TEXTURE1));
 
-    while (!glfwWindowShouldClose(window.get())) {
+    float last_frame_time = 0;
+    float delta_time = 0;
+
+    while (!glfwWindowShouldClose(window)) {
+        float current_frame_time = static_cast<float>(glfwGetTime());
+        delta_time = current_frame_time - last_frame_time;
+        last_frame_time = current_frame_time;
+
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+            window_data.camera.handle_keyboard(direction::forward, delta_time);
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+            window_data.camera.handle_keyboard(direction::backward, delta_time);
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+            window_data.camera.handle_keyboard(direction::left, delta_time);
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+            window_data.camera.handle_keyboard(direction::right, delta_time);
+
+
         const auto angle = static_cast<float>(glfwGetTime());
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -246,10 +306,13 @@ int main(int, const char** argv) {
 
         shader.uniform("blend_value", window_data.blend_value);
 
-        glm::mat4 view = glm::identity<glm::mat4>() | translate(glm::vec3(0.0f, 0.0f, -3.0f));
-        shader.uniform("view", view);
+        shader.uniform("view", window_data.camera.view());
 
-        glm::mat4 projection = glm::perspective(glm::radians(45.0f), window_data.width / window_data.height, 0.1f, 100.0f);
+        glm::mat4 projection = glm::perspective(
+            glm::radians(window_data.camera.fov()),
+            window_data.width / window_data.height,
+            0.1f, 100.0f);
+
         shader.uniform("projection", projection);
 
         for (std::size_t i = 0; i < cube_positions.size(); ++i) {
@@ -262,7 +325,7 @@ int main(int, const char** argv) {
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
 
-        glfwSwapBuffers(window.get());
+        glfwSwapBuffers(window);
         glfwPollEvents();
     }
 }

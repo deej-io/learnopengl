@@ -16,7 +16,7 @@ add_executable(learnopengl
 )
 
 target_compile_features(learnopengl PUBLIC cxx_std_20)
-target_compile_options(learnopengl PRIVATE $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>>:-Wextra -Wall>)
+target_compile_options(learnopengl PRIVATE $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>>:-Wextra -Wall -pedantic -Wno-c++98-c++11-c++14-c++17-compat-pedantic>)
 target_compile_definitions(learnopengl PRIVATE GLFW_INCLUDE_NONE)
 
 target_link_libraries(learnopengl PUBLIC fmt::fmt glad::glad glfw)
